@@ -1,0 +1,4 @@
+graph monGraph {
+	// On relie l'élément a à b.
+	a -- b;
+}
