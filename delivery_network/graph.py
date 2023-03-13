@@ -1,4 +1,4 @@
-import copy, time
+import copy, time, random
 from graphviz import Graph as gr
  
 
@@ -9,7 +9,6 @@ class Graph:
         self.nb_nodes = len(nodes)
         self.nb_edges = 0
     
-
     def __str__(self):
         """Prints the graph as a list of neighbors for each node (one per line)"""
         if not self.graph:
@@ -39,97 +38,7 @@ class Graph:
         self.graph[node1].append( (node2, power_min, dist) )
         self.graph[node2].append( (node1, power_min, dist) )
         self.nb_edges += 1
-
-
-
-    """
-    def get_path_with_power(self, dep, dest, power):
-    
-        print("la fonction get_path_with_power est lancée")
-
-        position=dep                                        # on se place à la positio de départ
-                            
-        le_chemin_optimal=[[dep]]   
-        distance=[0]                        # on creer un liste qui va contenir tous les chemins possibles en partant de départ
-        while le_chemin_optimal!=[]:                        # tant que la grosse liste qui contiet tous les chemins possibles n'est pas vide:
-            
-            print("--------------------DEPART-boucle while-------------------------")
-            print("le chemin optimal départ", le_chemin_optimal)
-            sauv=copy.deepcopy(le_chemin_optimal)           # on stock dans sauv les chemins possibles déja établis
-            
-            for j in range(0,len(sauv)): 
-                print("---------DEPART-boucle for chemin étudié: j=", j)
-                chemin_simple=sauv[j]                       # on récupere chaque chemin et on fait:
-                print(" chemin étudié:", chemin_simple) 
-                position=chemin_simple[-1]                  # on récupere la derniere postion de ce chemin
-                voisin=self.graph[position]                 # on recupere dans la variable voisin les voisins proches de position
-                print("les voisins de position", position, "sont", voisin)
-
-                for i in voisin:                            #pour chaque voisin:
-                    print("--------------DEPART - boucle for chaque voisin")
-                    print("le voisin considéré est:", i)
-                    print("power_camion=", power, "puissance_route=", i[1])
-
-                    chem=copy.deepcopy(chemin_simple) 
-                    liste_voisins=chem
-                    print("le chemin consideré est", chem)
-
-                    if len(chem)==1 and i[0]!=dest and power >= i[1]:       # si le camion est a son premier tronçon et que la power est ok
-                        print("premier chemin fait")
-                        liste_voisins.append( i[0])                         # on met dans liste_voisins la position suivante
-                        print("nouveau chemin:", liste_voisins)
-                        le_chemin_optimal.append(liste_voisins) 
-                        print("ancienne distance=", distance[0])
-                        distance.append(distance[0]+i[2])
-                        print("nouvelle distance=", distance[0]+i[2])            # on met dans le chemin optimal le nouveau trajet possible
-                        print("le chemin optimal=", le_chemin_optimal)
-                        print("la nouvelle distance=", distance)
-
-                    elif len(chem)>1 and i[0] != chem[-2] and i[0]!=dest and power >= i[1]: # si le camion va en avant, n'est pas arrivé a destination, et a une puissance suffisante
-                        print("Camion va en avant + assez de puissance + trajet non fini")
-                        liste_voisins.append( i[0])
-                        print("nouveau chemin", liste_voisins)
-                        le_chemin_optimal.append(liste_voisins)
-                        print("ancienne distance=", distance[0])
-                        print("l'ancien vecteur de distance", distance)
-                        print("nouvelle distance=", distance[0]+i[2])            # on met dans le chemin optimal le nouveau trajet possible
-                        
-                        distance.append(distance[0]+i[2])
-                        print("chem opti=", le_chemin_optimal)
-                        print("la nouvelle distance=", distance)
-
-
-                    elif len(chem)>1 and i[0] != chem[-2] and i[0]==dest and power >= i[1]:  # si le camion va en avant, est arrivé a dest et la puissance est ok
-                        print("Camion en avant + assez de puissance + trajet terminé")
-                        liste_voisins.append( i[0])
-                        print("ancienne distance=", distance[0])
-                        print("nouvelle distance=", distance[0]+i[2])
-                        distance.append(distance[0]+i[2])
-                        le_chemin_optimal.append(liste_voisins)
-                        le_chemin_optimal.pop(0)  #on enlève le chemin d'avant
-                        distance.pop(0)
-                        print("nouvelle distance=", distance)
-                        print("chem opti=", le_chemin_optimal)
-
-
-                        return liste_voisins, distance[-1]
-                    
-                    elif len(chem)>1 and i[0] == chem[-2]:
-                        print("le camion ne veut pas reculer")
-                    
-                print("------------fin boucle chemin considéré ---------------- ")
-                print("------------fin boucle chaque voisin--------------------")
-                le_chemin_optimal.pop(0)  #on enlève le chemin d'avant
-                distance.pop(0)
-                print("distancefinale", distance)
-                print("le chemin optimalfinal", le_chemin_optimal)
-                
-        return None # si le_chemin_optimal est vide, on retourne None
-
-   
-    #-----------------------get path with power avec distance---------------------------------------------
-"""
-           
+ 
     def chemin_optimal_avec_distance(self, dep, dest, power):
         """
         Pour un graph donné, on prend en entréé le départ dep, la destination dest et la puissance du camion power.
@@ -245,10 +154,9 @@ class Graph:
                       
         return None # si le_chemin_optimal est vide, on retourne None
 
-
-
-
     def get_path_with_power(self, dep, dest, power):
+        #BSF
+
         ancetre={}   # le dictionnaire des ancètres
         ou_est_on=[dep] # notre liste des positions
         position=dep # notre posotion de départ
@@ -356,7 +264,6 @@ class Graph:
             
         return tous_les_chemins
 
-
     def connected_components_set(self):
         """
         Prend ma fonction connected_components et transforme le resultat en frozensets
@@ -365,12 +272,11 @@ class Graph:
         """
         return set(map(frozenset, self.connected_components()))
     
-
-
-
     def min_power(self, dep, dest):
+
+        # COMPLEXITE DE MIN_POWER : complexité en max(complexité de get_path_with_power, longueur de trajet * longuer de liste)
         
-        trajet=self.get_path_with_power2(dep, dest, power=999999999999999999)
+        trajet=self.get_path_with_power(dep, dest, power=999999999999999999)
         puissance=0
         for k in range(0, len(trajet)-1): #trajet=[1,2,3,4]
 
@@ -390,6 +296,8 @@ class Graph:
 
             
     def representation(self, nom):
+
+        # Permet d'affciher le graph
 
         graphe = gr(format='png', engine="circo")
 
@@ -412,12 +320,12 @@ class Graph:
         return()
     
 
-# ------------------ NOUVEL ESSAI -------------------------------
-
     def montre_le_chemin(self, nom,  dep, dest, power):
 
+        # Permet d'afficher le graph, et de mettre en évidence l'arrivée, le départ et le chemin optimal.
+
         graphe = gr(format='png', engine="circo") # on creer un graph
-        trajet=self.get_path_with_power2(dep, dest, power)
+        trajet=self.get_path_with_power(dep, dest, power)
         key=self.graph.keys() # on récupere tous les sommets
         sauv=[]
         print("trajet=", trajet)
@@ -477,10 +385,27 @@ class Graph:
 
         return()
     
-
-     
-
-        
+    def temps_necessaire(self):
+        #fonction de jul, temps necessaire pour calculer la puissnace minimale
+        temps = []
+        chemin = []
+        puissance = []
+        for _ in range(6):
+            a = random.randint(0,self.nb_nodes)
+            b = random.randint(0,self.nb_nodes)
+            t1 = time.perf_counter()
+            c = self.min_power(a,b)
+            t2 = time.perf_counter()
+            temps.append(t2-t1)
+            chemin.append(c[0])
+            puissance.append(c[1])
+        i = indice_min(puissance)
+        return temps[i], chemin[i],puissance[i]
+    
+    def min_power_kruskal(self,dep,dest):
+        g = self.kruskal() #kruskal fonction qui nous renvoie un arbre couvrant de poids minimal 
+        return g.min_power(dep,dest)
+    
 
 
 def graph_from_file(filename):
@@ -552,8 +477,6 @@ def element_en_commun(liste1, liste2):
     else:
         return 0
     
-
-
 def pas_de_doublons(liste1, liste2):
     "enlève les doublons d'une liste composée de deux listes"
     final = liste1 + liste2
@@ -561,7 +484,6 @@ def pas_de_doublons(liste1, liste2):
     final=sorted(final)
     return final
             
-	
 def indice_min(liste):
     min = liste[0]
     indice = 0
@@ -571,10 +493,128 @@ def indice_min(liste):
             indice= i
     return indice
 
+#classe faite par juliette
+class union_finds:
+    dico_parent = {}
+
+    def __init__(self, graphe): #graphe liste de tout les sommets
+        for i in graphe :
+            self.dico_parent[i] = i  #on crée le dictionnaire de base qui à chaque noeud associe son parent
+
+    def finds(self, noeud):
+        if self.dico_parent[noeud] == noeud:
+            return noeud
+        else : 
+            return self.finds(self.dico_parent[noeud])  # renvoie le représentant du noeud, ie le parent du parent..
+        
+    def union(self, noeud1, noeud2):
+        x = self.finds(noeud1)
+        y = self.finds(noeud2)
+        self.dico_parent[x] = y  #donne le même parent à noeud1 et noeud 2
+        return y
 
 
+def unionfinds(chemin,classe):
+    return [classe.finds(i) for i in chemin]  #nous renvoie la liste des parents 
 
 def kruskal(g):
+    "renvoie un graph dont il ne reste que les arretes qui ne font pas de cycle et dont es arretes sont de poids minimal"
+    sommets=list(g.graph.keys()) # on récupere tous les sommets
+    print("sommets=", sommets)
+    new_sommets = []
+    
+
+    classe = union_finds()  #on l'appelle pour pouvoir l'utiliser 
+
+    # On récupere les chemins et les puissances dans deux listes
+
+    chemin=[]#tous les chemins possibles (57), (12),...
+    power=[]
+    sauv=[]
+
+    for i in sommets: # on creer tous les sommets
+        print("i=",i)
+        for voisin in g.graph[i]:
+            print(voisin[0])
+            if voisin[0] not in sauv:
+                int=[]
+                int.append(i)
+                int.append(voisin[0])
+                chemin.append(int)
+                power.append(voisin[1])
+        sauv.append(i)
+        print("sauv=", sauv)
+        print("chemin=",chemin)
+        print("power=",power)
+
+    G = Graph(range(1, len(sommets)+1))
+    print("premiere étape passée -----------")
+
+    # On prend le plus petit poids et on creer un graph avec cette arrête
+
+
+    while chemin!= []: #tant qu'on a pas regardé tout les chemins
+        #On prend la liaison de plus petit poids
+        ind_mn=indice_min(power)
+        print("indicemin=", power[ind_mn])
+        plus_ptt_poids=chemin[ind_mn]
+        print("plus_petit_poids=", plus_ptt_poids)
+
+        '''union finds :
+         1- on trouve la prochaine arrête de plus petite puissance
+         2- on regarde si le parent des deux sommets de cette arrête est le même :
+         si oui, on ne la prends pas
+         si non, on la prends et on lui change le parent afin que ce soit le même
+         PROBLEME : changer tous les parents précédents  '''
+        
+        i = sommets.index(plus_ptt_poids[0])
+        j = sommets.index(plus_ptt_poids[1])
+
+        if unionfinds(sommets,classe)[i] != unionfinds(sommets,classe)[j]: #si le parent du i eme sommet different du parent du j ieme sommet
+            
+            #on va modifier les parents précédents, qui avaient donc un parent commun avec i ou j:
+            for x in range(len(sommets)):
+                if classe.finds(sommets[x]) == classe.finds(plus_ptt_poids[0]): #si le parent du sommet d'inidce x est le même que le parent du sommet d'indice i
+                    classe.union(sommets[x],plus_ptt_poids[1])  #alors son parent devient le parent du j ieme sommet 
+                elif classe.finds(sommets[x]) == classe.finds(plus_ptt_poids[1]): #pas sur que ce soit utile d'apres matteo 
+                    classe.union(sommets[x], plus_ptt_poids[1])
+            classe.union(plus_ptt_poids[0], plus_ptt_poids[1]) #les parents des i et j sommets deviennent tout deux egaux au parent du j ieme sommet
+
+
+            G.add_edge(plus_ptt_poids[0], plus_ptt_poids[1], power[ind_mn])
+
+        chemin.pop(ind_mn) #on enlève dans tous les cas de la liste de chemin puisqu'on ne pourra pas la prendre
+        power.pop(ind_mn)
+
+        print("test",plus_ptt_poids[0])
+        # a voir pour rajouter les arretes manquantes 
+        new_sommets.append(plus_ptt_poids[0])
+        new_sommets.append(plus_ptt_poids[1])        
+
+        new_sommets=list(set(new_sommets))
+        new_sommets=sorted(new_sommets)
+
+        print("new_sommets=", new_sommets)
+
+    return G
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+
+def kruskal(g): fonctiion de Lilou en sauvegarde si jamais
     "renvoi un graph dont il ne reste que les arretes qui ne font pas de cycle et dont es arretes sont de poids minimal"
 
     sommets=list(g.graph.keys()) # on récupere tous les sommets
@@ -632,7 +672,7 @@ def kruskal(g):
 
     return G
 
-
+'''
 
 
 
