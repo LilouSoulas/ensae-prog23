@@ -3,7 +3,7 @@ import copy
 
 
 data_path = "input/"
-file_name = "network.00.in"
+file_name = "network.1.in"
 
 """
 
@@ -13,10 +13,10 @@ print(a)
 
 
 g = graph_from_file(data_path + file_name)
-print(g)
+#print(g)
 
 
-print(g.BFS(4, 8, 1000))
+print(g.Nombre_de_chemin(8,6))
 
 """
 

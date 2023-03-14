@@ -208,9 +208,31 @@ class Graph:
 
         #liste on on rajoute tous les voisins et on pop le truc d'avant
 
-    def connected_components(self):  
+    def connected_components(self):
+        # Renvoi les éléments qui sont reliés entre eux dans un graph
+        déja_vu = set() # on initialise un set qui va contenir tous les noeuds déja traités
+        tous_les_elements_connectés = [] # on initialise une liste qui va contenir tous les paquets d'éléments connectés
+        for noeud in self.graph: # pour chaque noeuds du graph:
+            if noeud not in déja_vu: # si le noeud n'a pas déja été traité:
+                elements_connecté = set() # on creer un set qui va contenir les elements connectés avec ce noeud
+                dfs(noeud, self.graph, déja_vu, elements_connecté) # on utiilise le DFS voir ci dessous
+                tous_les_elements_connectés.append(elements_connecté) # on ajoute a notre grosse liste de tous les éléments connectés le paquets d'éléments cpnnectés que l'on vient de faire
+        return tous_les_elements_connectés
+
+    def DFS(noeud, self, déja_vu, elements_connectés):
+        # ne renvoi rien car elle stock des informations en mémoire
+        déja_vu.add(noeud) # on ajoute à déja vu le noeud traité
+        elements_connectés.add(noeud) # on ajoute a nos éléments connectés le noeud traité
+        for voisin in self.graph[noeud]: # pour chaque voisin:
+            if voisin not in déja_vu: # si le voisin n'a pas déja été traité:
+                DFS(voisin, self.graph, déja_vu, elements_connectés) # on utilise le DFS pour ecommencer jusqu'a ce qu'il n'y ai plus de voiins à traiter
+
+    def connected_components2(self):  
         """
         Pour un graph donné, renvoi des listes contenant tous les élements relié ensembles
+        Autre facon de le coder qu'on a laissé ici mais on preferera utiliser la fonction avec le DFS car plus optimisée
+
+
         """
         print("début de la fonction connected_components")
 
@@ -276,7 +298,7 @@ class Graph:
 
         # COMPLEXITE DE MIN_POWER : complexité en max(complexité de get_path_with_power, longueur de trajet * longuer de liste)
         
-        trajet=self.get_path_with_power(dep, dest, power=999999999999999999)
+        trajet=self.chemin_optimal_avec_distance(dep, dest, power=999999999999999999)
         puissance=0
         for k in range(0, len(trajet)-1): #trajet=[1,2,3,4]
 
@@ -294,7 +316,6 @@ class Graph:
 
         return trajet, puissance 
 
-            
     def representation(self, nom):
 
         # Permet d'affciher le graph
@@ -319,7 +340,6 @@ class Graph:
 
         return()
     
-
     def montre_le_chemin(self, nom,  dep, dest, power):
 
         # Permet d'afficher le graph, et de mettre en évidence l'arrivée, le départ et le chemin optimal.
@@ -385,27 +405,64 @@ class Graph:
 
         return()
     
-    def temps_necessaire(self):
-        #fonction de jul, temps necessaire pour calculer la puissnace minimale
+    def temps_necessaire_jul(self):
+        #fonction de jul, temps necessaire pour calculer la puissnace minimale et le chemin associé, ie get_path_with_power
         temps = []
-        chemin = []
-        puissance = []
+        nb_chemin_possible=3  # à changer
         for _ in range(6):
             a = random.randint(0,self.nb_nodes)
             b = random.randint(0,self.nb_nodes)
             t1 = time.perf_counter()
-            c = self.min_power(a,b)
+            c = self.get_path_with_power(a,b,9999999999999999999999999999)
             t2 = time.perf_counter()
             temps.append(t2-t1)
-            chemin.append(c[0])
-            puissance.append(c[1])
-        i = indice_min(puissance)
-        return temps[i], chemin[i],puissance[i]
+        moyenne_temps=sum(temps)/len(temps)
+        temps_necessaire=moyenne_temps*nb_chemin_possible
+        return temps_necessaire
     
+    def temps_necessaire(self):
+        # On ne sait pas si on a bien compris la question. On va calculer pour 6 trajets différents entre deux points, le temps necessaire pour trouver la puissance minimale. On multiplie ensuite par le nombre de chemin total possible
+        dep = random.randint(0,self.nb_nodes)
+        dest = random.randint(0,self.nb_nodes) # on initialise de facon aléatoire un départ et une arrivée
+        temps = []
+        nb_chemin_possible=self.Nombre_de_chemin(dep, dest, visité=None)
+        for _ in range(6): # pour 6 puissance du camion différentes, donc 6 trajets différents
+            power=random.randint(0, 100000000000)
+            t1 = time.perf_counter()
+            c = self.min_power(dep,dest,power)
+            t2 = time.perf_counter()
+            temps.append(t2-t1)
+        moyenne_temps=sum(temps)/len(temps)
+        temps_necessaire=moyenne_temps*nb_chemin_possible
+        return temps_necessaire
+
+    def Nombre_de_chemin(self, dep, dest, visité=None):
+        print(dep)
+        print(dest)
+        # donne le nombre de chemins possibles entre deux points du graphe
+        if visité is None:
+            visité = set()
+        visité.add(dep)
+        if dep == dest:
+            return 1
+        nb_chem_possibles = 0
+        print(self.graph)
+        for voisin in self.graph[dep]:
+            print("vois",voisin)
+            print("voisin[0]", voisin[0])
+            if voisin[0] not in visité:
+                nb_chem_possibles += self.Nombre_de_chemin(voisin[0], dest, visité)
+        visité.remove(dep)
+        return nb_chem_possibles
+
+
+
     def min_power_kruskal(self,dep,dest):
         g = self.kruskal() #kruskal fonction qui nous renvoie un arbre couvrant de poids minimal 
         return g.min_power(dep,dest)
     
+
+
 
 
 def graph_from_file(filename):
@@ -437,9 +494,7 @@ def graph_from_file(filename):
     nb_edge=int(first_line[first_line.find(" "):-1])
     print(nb_edge)
     
-
     G = Graph(range(1, nb_node+1))
-
 
     line=[]
     for i in range( nb_edge):
@@ -459,6 +514,55 @@ def graph_from_file(filename):
 
     return G
 
+
+def graph_from_file_routes(filename):
+    """
+    Reads a text file and returns the graph as an object of the Graph class.
+
+    The file should have the following format: 
+        The first line of the file is 'n m'
+        The next m lines have 'node1 node2 power_min dist' or 'node1 node2 power_min' (if dist is missing, it will be set to 1 by default)
+        The nodes (node1, node2) should be named 1..n
+        All values are integers.
+
+    Parameters: 
+    -----------
+    filename: str
+        The name of the file
+
+    Outputs: 
+    -----------
+    G: Graph
+        An object of the class Graph with the graph from file_name.
+    """
+
+
+    fichier = open(filename, "r")
+    first_line=fichier.readline()
+    nb_node=int(first_line[:first_line.find(" ")])
+    print(nb_node)
+    nb_edge=int(first_line[first_line.find(" "):-1])
+    print(nb_edge)
+    
+    G = Graph(range(1, nb_node+1))
+
+    line=[]
+    for i in range( nb_edge):
+        print(i)
+        line=fichier.readline()
+        ligne_split=line.split(" ")
+        print(ligne_split)
+        noeud1=ligne_split[0]
+        noeud2=ligne_split[1]
+        power=ligne_split[2]
+        print("len=",len(ligne_split))
+        if len(ligne_split)==4:
+            distance=ligne_split[3]
+            G.add_edge(int(noeud1), int(noeud2) ,  int(power), int(distance))
+        else:
+            G.add_edge(int(noeud1), int(noeud2) ,  int(power))
+
+    return G
 
 def element_en_commun(liste1, liste2):
     "compare deux listes et renvoi 1 si des elements sont communs aux deux listes, renvoi 0 sinon"
@@ -512,7 +616,6 @@ class union_finds:
         y = self.finds(noeud2)
         self.dico_parent[x] = y  #donne le même parent à noeud1 et noeud 2
         return y
-
 
 def unionfinds(chemin,classe):
     return [classe.finds(i) for i in chemin]  #nous renvoie la liste des parents 
@@ -610,69 +713,6 @@ def kruskal(g):
 
 
 
-
-
-'''
-
-def kruskal(g): fonctiion de Lilou en sauvegarde si jamais
-    "renvoi un graph dont il ne reste que les arretes qui ne font pas de cycle et dont es arretes sont de poids minimal"
-
-    sommets=list(g.graph.keys()) # on récupere tous les sommets
-    print("sommets=", sommets)
-    new_sommets=[]
-
-
-    # On récupere les chemins et les puissances dans deux listes
-    chemin=[]
-    power=[]
-    sauv=[]
-
-    for i in sommets: # on creer tous les sommets
-        print("i=",i)
-        for voisin in g.graph[i]:
-            print(voisin[0])
-            if voisin[0] not in sauv:
-                int=[]
-                int.append(i)
-                int.append(voisin[0])
-
-                chemin.append(int)
-                power.append(voisin[1])
-        
-        sauv.append(i)
-        print("sauv=", sauv)
-        print("chemin=",chemin)
-        print("power=",power)
-
-    G = Graph(range(1, len(sommets)+1))
-    print("premiere étape passée -----------")
-    # On prend le plus petit poids et on creer un graph avec cette arrête
-
-    while new_sommets!=sommets:
-
-        #On prend la liaison de plus petit poids
-        ind_mn=indice_min(power)
-        print("indicemin=", power[ind_mn])
-        plus_ptt_poids=chemin[ind_mn]
-        print("plus_petit_poids=", plus_ptt_poids)
-
-        G.add_edge(plus_ptt_poids[0], plus_ptt_poids[1], power[ind_mn])
-
-        chemin.pop(ind_mn)
-        power.pop(ind_mn)
-        print("test",plus_ptt_poids[0])
-        new_sommets.append(plus_ptt_poids[0])
-        new_sommets.append(plus_ptt_poids[1])
-        
-        new_sommets=list(set(new_sommets))
-        new_sommets=sorted(new_sommets)
-
-        print("new_sommets=", new_sommets)
-
-
-    return G
-
-'''
 
 
 
