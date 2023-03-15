@@ -215,7 +215,7 @@ class Graph:
         for noeud in self.graph: # pour chaque noeuds du graph:
             if noeud not in déja_vu: # si le noeud n'a pas déja été traité:
                 elements_connecté = set() # on creer un set qui va contenir les elements connectés avec ce noeud
-                dfs(noeud, self.graph, déja_vu, elements_connecté) # on utiilise le DFS voir ci dessous
+                self.DFS(noeud, self.graph, déja_vu, elements_connecté) # on utiilise le DFS voir ci dessous
                 tous_les_elements_connectés.append(elements_connecté) # on ajoute a notre grosse liste de tous les éléments connectés le paquets d'éléments cpnnectés que l'on vient de faire
         return tous_les_elements_connectés
 
@@ -225,7 +225,7 @@ class Graph:
         elements_connectés.add(noeud) # on ajoute a nos éléments connectés le noeud traité
         for voisin in self.graph[noeud]: # pour chaque voisin:
             if voisin not in déja_vu: # si le voisin n'a pas déja été traité:
-                DFS(voisin, self.graph, déja_vu, elements_connectés) # on utilise le DFS pour ecommencer jusqu'a ce qu'il n'y ai plus de voiins à traiter
+                self.DFS(voisin, self.graph, déja_vu, elements_connectés) # on utilise le DFS pour ecommencer jusqu'a ce qu'il n'y ai plus de voiins à traiter
 
     def connected_components2(self):  
         """
@@ -292,7 +292,7 @@ class Graph:
         The result should be a set of frozensets (one per component), 
         For instance, for network01.in: {frozenset({1, 2, 3}), frozenset({4, 5, 6, 7})}
         """
-        return set(map(frozenset, self.connected_components()))
+        return set(map(frozenset, self.connected_components2()))
     
     def min_power(self, dep, dest):
 
@@ -514,11 +514,30 @@ def graph_from_file(filename):
 
     return G
 
+def nb_nodes_routes(filename):
+    #donne le nombre de noeuds d'un graphe
 
-def graph_from_file_routes(filename):
+    fichier = open(filename, "r")
+    first_line=fichier.readline()
+    nb_edge=int(first_line)
+
+    nb_node = 0
+
+    for _ in range(nb_edge):
+        line=fichier.readline()
+        ligne_split=line.split(" ")
+        noeud1=int(ligne_split[0])
+        noeud2=int(ligne_split[1])
+        node = max(noeud1,noeud2)
+        if nb_node < node :
+            nb_node = node
+
+    return nb_node
+
+def graph_from_route(filename):
+
     """
     Reads a text file and returns the graph as an object of the Graph class.
-
     The file should have the following format: 
         The first line of the file is 'n m'
         The next m lines have 'node1 node2 power_min dist' or 'node1 node2 power_min' (if dist is missing, it will be set to 1 by default)
@@ -529,24 +548,23 @@ def graph_from_file_routes(filename):
     -----------
     filename: str
         The name of the file
-
     Outputs: 
     -----------
     G: Graph
         An object of the class Graph with the graph from file_name.
     """
 
-
     fichier = open(filename, "r")
     first_line=fichier.readline()
-    nb_node=int(first_line[:first_line.find(" ")])
-    print(nb_node)
-    nb_edge=int(first_line[first_line.find(" "):-1])
-    print(nb_edge)
-    
+    nb_node = nb_nodes_routes(filename)
+    nb_edge=int(first_line)
+
+
+
     G = Graph(range(1, nb_node+1))
 
     line=[]
+
     for i in range( nb_edge):
         print(i)
         line=fichier.readline()
@@ -561,6 +579,8 @@ def graph_from_file_routes(filename):
             G.add_edge(int(noeud1), int(noeud2) ,  int(power), int(distance))
         else:
             G.add_edge(int(noeud1), int(noeud2) ,  int(power))
+        noeud = max(noeud1,noeud2)
+    
 
     return G
 
@@ -597,46 +617,59 @@ def indice_min(liste):
             indice= i
     return indice
 
-#classe faite par juliette
-class union_finds:
-    dico_parent = {}
 
-    def __init__(self, graphe): #graphe liste de tout les sommets
-        for i in graphe :
-            self.dico_parent[i] = i  #on crée le dictionnaire de base qui à chaque noeud associe son parent
+class UnionFind:
 
-    def finds(self, noeud):
-        if self.dico_parent[noeud] == noeud:
-            return noeud
-        else : 
-            return self.finds(self.dico_parent[noeud])  # renvoie le représentant du noeud, ie le parent du parent..
-        
-    def union(self, noeud1, noeud2):
-        x = self.finds(noeud1)
-        y = self.finds(noeud2)
-        self.dico_parent[x] = y  #donne le même parent à noeud1 et noeud 2
-        return y
+    def __init__(self, n):  #n nombre de sommets du graphe a etudier
+        self.parent = list(range(1,n+1))
+        self.rang = [0] * n
+
+
+    def find(self, x):  #nous renvoie le représentant de l'élément x
+        if self.parent[x-1] == x:  #x-1 car notre premier sommet est 1 et non 0
+            return x 
+        else:
+            return self.find(self.parent[x])
+
+
+    def union(self, x, y): #fusionne les branches du représentant de x et du représentant de y 
+        representant_x = self.find(x)
+        representant_y = self.find(y)
+        if representant_x != representant_y:  #il va fusionner les "familles" des représentants à celui qui a le moins de "descendants"
+            if self.rang[representant_x-1] < self.rang[representant_y-1]:
+                self.parent[representant_x-1] = representant_y
+            elif self.rang[representant_x-1] > self.rang[representant_y-1]:
+                self.parent[representant_y-1] = representant_x
+            else:
+                self.parent[representant_y-1] = representant_x
+                self.rang[representant_x-1] += 1
+
 
 def unionfinds(chemin,classe):
     return [classe.finds(i) for i in chemin]  #nous renvoie la liste des parents 
 
 def kruskal(g):
-    "renvoie un graph dont il ne reste que les arretes qui ne font pas de cycle et dont es arretes sont de poids minimal"
-    sommets=list(g.graph.keys()) # on récupere tous les sommets
-    print("sommets=", sommets)
-    new_sommets = []
-    
 
-    classe = union_finds()  #on l'appelle pour pouvoir l'utiliser 
+    "renvoie un graph dont il ne reste que les arretes qui ne font pas de cycle et dont es arretes sont de poids minimal"
+
+    sommets=list(g.graph.keys()) # on récupere tous les sommets
+
+    new_sommets = []
+
+    uf = UnionFind(len(sommets)) 
 
     # On récupere les chemins et les puissances dans deux listes
+
 
     chemin=[]#tous les chemins possibles (57), (12),...
     power=[]
     sauv=[]
 
+
+
     for i in sommets: # on creer tous les sommets
-        print("i=",i)
+    
+
         for voisin in g.graph[i]:
             print(voisin[0])
             if voisin[0] not in sauv:
@@ -645,61 +678,59 @@ def kruskal(g):
                 int.append(voisin[0])
                 chemin.append(int)
                 power.append(voisin[1])
+
         sauv.append(i)
-        print("sauv=", sauv)
-        print("chemin=",chemin)
-        print("power=",power)
 
     G = Graph(range(1, len(sommets)+1))
-    print("premiere étape passée -----------")
+
 
     # On prend le plus petit poids et on creer un graph avec cette arrête
 
-
     while chemin!= []: #tant qu'on a pas regardé tout les chemins
+
         #On prend la liaison de plus petit poids
+
         ind_mn=indice_min(power)
-        print("indicemin=", power[ind_mn])
+
         plus_ptt_poids=chemin[ind_mn]
-        print("plus_petit_poids=", plus_ptt_poids)
+
 
         '''union finds :
+
          1- on trouve la prochaine arrête de plus petite puissance
          2- on regarde si le parent des deux sommets de cette arrête est le même :
          si oui, on ne la prends pas
          si non, on la prends et on lui change le parent afin que ce soit le même
-         PROBLEME : changer tous les parents précédents  '''
-        
+         PROBLEME : changer tous les parents précédents, résolu par union by rank  '''
+
         i = sommets.index(plus_ptt_poids[0])
         j = sommets.index(plus_ptt_poids[1])
 
-        if unionfinds(sommets,classe)[i] != unionfinds(sommets,classe)[j]: #si le parent du i eme sommet different du parent du j ieme sommet
-            
-            #on va modifier les parents précédents, qui avaient donc un parent commun avec i ou j:
-            for x in range(len(sommets)):
-                if classe.finds(sommets[x]) == classe.finds(plus_ptt_poids[0]): #si le parent du sommet d'inidce x est le même que le parent du sommet d'indice i
-                    classe.union(sommets[x],plus_ptt_poids[1])  #alors son parent devient le parent du j ieme sommet 
-                elif classe.finds(sommets[x]) == classe.finds(plus_ptt_poids[1]): #pas sur que ce soit utile d'apres matteo 
-                    classe.union(sommets[x], plus_ptt_poids[1])
-            classe.union(plus_ptt_poids[0], plus_ptt_poids[1]) #les parents des i et j sommets deviennent tout deux egaux au parent du j ieme sommet
 
+        if uf.find(plus_ptt_poids[0]) != uf.find(plus_ptt_poids[1]): #si le parent du i eme sommet different du parent du j ieme sommet
 
+         
+            uf.union(plus_ptt_poids[0], plus_ptt_poids[1]) #les parents des i et j sommets deviennent tout deux egaux au parent du j ieme sommet
             G.add_edge(plus_ptt_poids[0], plus_ptt_poids[1], power[ind_mn])
+
 
         chemin.pop(ind_mn) #on enlève dans tous les cas de la liste de chemin puisqu'on ne pourra pas la prendre
         power.pop(ind_mn)
 
-        print("test",plus_ptt_poids[0])
-        # a voir pour rajouter les arretes manquantes 
         new_sommets.append(plus_ptt_poids[0])
         new_sommets.append(plus_ptt_poids[1])        
 
         new_sommets=list(set(new_sommets))
         new_sommets=sorted(new_sommets)
 
-        print("new_sommets=", new_sommets)
-
     return G
+
+
+## COMPLEXITE : notons n le nombre de sommets
+## - la boucle for nous permettant de calculer tous les somments a une complexité en O(n²)
+## - la boucle while faisant appel a la classe union_finds a alors une complexité a son tour en O(n)
+## - On construit p arrêtes pour notre nouveau graphe
+## - La complexité finale est en O(p*n²)
 
 
 
