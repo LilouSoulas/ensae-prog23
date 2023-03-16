@@ -101,18 +101,10 @@ class Graph:
         
         if len(chemins_qui_marchent) > 1:  #on récupere le chemin avec le moins de distance possible
             indice_du_min=indice_min(distances_qui_marchent)
-            t2=time.perf_counter()
-            print("time:", t2-t1)
-            print("time:", t2-t1)
-
-            print("t2-----------------------")
             return chemins_qui_marchent[indice_du_min]
 
 
         if len(chemins_qui_marchent)==1:
-            t2=time.perf_counter()
-            print("t2-----------------------")
-            print("time:", t2-t1)
             return chemins_qui_marchent[0]
         
        
@@ -612,7 +604,7 @@ class UnionFind:
 
 def kruskal(g):
 
-    "renvoie un graph dont il ne reste que les arretes qui ne font pas de cycle et dont es arretes sont de poids minimal"
+    "renvoie un graph dont il ne reste que les arretes qui ne font pas de cycle et dont les arretes sont de poids minimal"
 
     sommets=list(g.graph.keys()) # on récupere tous les sommets
     new_sommets = []
@@ -684,6 +676,45 @@ def kruskal(g):
 ## - la boucle while faisant appel a la classe union_finds a alors une complexité a son tour en O(n)
 ## - On construit p arrêtes pour notre nouveau graphe
 ## - La complexité finale est en O(p*n²)
+
+
+
+
+import heapq
+
+"On cherche a ecrire un algorithme nous donnant la puissance minimale necessaire a un camion pour couvrir un trajet donne avec une complexite en O(VlogV)"
+
+def dijkstra(graph, dep, dest):
+    pq = [(0, dep)]
+    visite = set()
+    while pq:
+        (dist, noeud) = heapq.heappop(pq)
+        if noeud in visite:
+            continue
+        visite.add(noeud)
+        if noeud == dest:
+            return dist
+        for voisin, puissance in graph[noeud].items():
+            heapq.heappush(pq, (max(dist, puissance), voisin))
+    return None
+
+def calculate_min_power(trip):
+    graph = {}
+    for i in range(len(trip)-1):
+        start, end, distance, slope = trip[i]
+        if start not in graph:
+            graph[start] = {}
+        if end not in graph:
+            graph[end] = {}
+        graph[start][end] = distance * slope
+        graph[end][start] = distance * slope
+    start, end, _, _ = trip[0]
+    return dijkstra(graph, start, end)
+
+# Exemple d'utilisation
+trip = [("A", "B", 100, 0.05), ("B", "C", 150, 0.1), ("C", "D", 200, 0.03)]
+min_power = calculate_min_power(trip)
+print(f"La puissance minimale nécessaire est {min_power}")
 
 
 
