@@ -161,16 +161,19 @@ class Graph:
         ou_est_on=[dep] # notre liste des positions
         position=dep # notre posotion de départ
         
-        recul=[] # notre liste des endroits ou l'on est déja allés pour éviter de faire demi tour
+        recul=[] # notre liste des endroits ou l'on est déja allé pour éviter de faire demi tour
 
         while position!=dest: # tant que notre position actuelle n'est pas égale à la destination on fait:
-            les_voisin=self.graph[position] # on récupere tous les voisins de notre position considérée
-            for voisin in les_voisin: # pour chaque voisin
+            print("position=", position)
+            les_voisins=self.graph[position] # on récupere tous les voisins de notre position considérée
+            
+            for voisin in les_voisins: # pour chaque voisin
+                print("voisin considéré=", voisin[0])
                 if voisin[0] not in recul and power > voisin[2]: # si la puissance est o et qu'on ne recule pas:
                     ou_est_on.append(voisin[0]) # on ajoute les positions suivante a notre liste de positions
                     ancetre[voisin[0]]=position # on ajoute au dictionnaire des ancètres l'ancetre du voisin considéré
 
-
+            print("ou on est avant pop=", ou_est_on)
             ou_est_on.pop(0) # on retire la position traitée de la liste de positions
             recul.append(position) # on ajoute la position traitée à la liste des positions déja traitée
             if ou_est_on!=[]: # juste pour le dernier tour sinon out of range
@@ -490,22 +493,17 @@ def graph_from_file(filename):
     fichier = open(filename, "r")
     first_line=fichier.readline()
     nb_node=int(first_line[:first_line.find(" ")])
-    print(nb_node)
     nb_edge=int(first_line[first_line.find(" "):-1])
-    print(nb_edge)
     
     G = Graph(range(1, nb_node+1))
 
     line=[]
     for i in range( nb_edge):
-        print(i)
         line=fichier.readline()
         ligne_split=line.split(" ")
-        print(ligne_split)
         noeud1=ligne_split[0]
         noeud2=ligne_split[1]
         power=ligne_split[2]
-        print("len=",len(ligne_split))
         if len(ligne_split)==4:
             distance=ligne_split[3]
             G.add_edge(int(noeud1), int(noeud2) ,  int(power), int(distance))
@@ -629,7 +627,7 @@ class UnionFind:
         if self.parent[x-1] == x:  #x-1 car notre premier sommet est 1 et non 0
             return x 
         else:
-            return self.find(self.parent[x])
+            return self.find(self.parent[x-1])
 
 
     def union(self, x, y): #fusionne les branches du représentant de x et du représentant de y 

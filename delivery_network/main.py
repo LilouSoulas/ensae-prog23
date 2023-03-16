@@ -16,7 +16,7 @@ g = graph_from_file(data_path + file_name)
 #print(g)
 
 
-print(g.Nombre_de_chemin(8,6))
+print(g.get_path_with_power(8,6, 1000))
 
 """
 

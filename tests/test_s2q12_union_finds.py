@@ -12,7 +12,7 @@ class Test_UnionFinds(unittest.TestCase):
         uf.union(1,2)
         uf.union(2,3)
         self.assertEqual(uf.find(1),1)
-        self.assertEqual(uf.find(2),3)
+        self.assertEqual(uf.find(2),1)
 
     def test_1(self):
         uf = UnionFind(10)
