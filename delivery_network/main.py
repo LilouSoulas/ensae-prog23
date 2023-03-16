@@ -15,9 +15,9 @@ print(a)
 g = graph_from_file(data_path + file_name)
 #print(g)
 
+#print(g.temps_necessaire())
 
-print(g.get_path_with_power(8,6, 1000))
-
+print(g.get_path_with_power(2, 18, ))
 """
 
 
