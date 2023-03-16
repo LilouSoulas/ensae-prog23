@@ -1,6 +1,7 @@
-import copy, time, random
+import copy, time, random, sys 
 from graphviz import Graph as gr
  
+sys.setrecursionlimit(10000)
 
 class Graph:
     def __init__(self, nodes=[]):
@@ -38,6 +39,7 @@ class Graph:
         self.graph[node1].append( (node2, power_min, dist) )
         self.graph[node2].append( (node1, power_min, dist) )
         self.nb_edges += 1
+ 
  
     def chemin_optimal_avec_distance(self, dep, dest, power):
         """
@@ -154,31 +156,34 @@ class Graph:
                       
         return None # si le_chemin_optimal est vide, on retourne None
 
+
     def get_path_with_power(self, dep, dest, power):
-        #BSF
+        #BSF qui marche
 
         ancetre={}   # le dictionnaire des ancètres
         ou_est_on=[dep] # notre liste des positions
         position=dep # notre posotion de départ
-        
+        k=0
         recul=[] # notre liste des endroits ou l'on est déja allé pour éviter de faire demi tour
 
         while position!=dest: # tant que notre position actuelle n'est pas égale à la destination on fait:
-            print("position=", position)
+            print("quête du chein optimal::::", k)
             les_voisins=self.graph[position] # on récupere tous les voisins de notre position considérée
             
             for voisin in les_voisins: # pour chaque voisin
-                print("voisin considéré=", voisin[0])
-                if voisin[0] not in recul and power > voisin[2]: # si la puissance est o et qu'on ne recule pas:
+                if voisin[0] not in recul and power > voisin[1] or power == voisin[1]: # si la puissance est o et qu'on ne recule pas:
                     ou_est_on.append(voisin[0]) # on ajoute les positions suivante a notre liste de positions
                     ancetre[voisin[0]]=position # on ajoute au dictionnaire des ancètres l'ancetre du voisin considéré
 
-            print("ou on est avant pop=", ou_est_on)
             ou_est_on.pop(0) # on retire la position traitée de la liste de positions
             recul.append(position) # on ajoute la position traitée à la liste des positions déja traitée
+
             if ou_est_on!=[]: # juste pour le dernier tour sinon out of range
+                
                 position=ou_est_on[0]
-            
+            else:
+                return None
+            k=k+1
 
         # on retrace le chemin inverse
         chemin_opti=[dest]
@@ -213,22 +218,27 @@ class Graph:
 
     def connected_components(self):
         # Renvoi les éléments qui sont reliés entre eux dans un graph
+        # !!! SERT POUR LES GRAPHS QUI SONT PLUS PETITS OU EGALS A 100000 SOMMETS !!!
         déja_vu = set() # on initialise un set qui va contenir tous les noeuds déja traités
         tous_les_elements_connectés = [] # on initialise une liste qui va contenir tous les paquets d'éléments connectés
         for noeud in self.graph: # pour chaque noeuds du graph:
             if noeud not in déja_vu: # si le noeud n'a pas déja été traité:
                 elements_connecté = set() # on creer un set qui va contenir les elements connectés avec ce noeud
-                self.DFS(noeud, self.graph, déja_vu, elements_connecté) # on utiilise le DFS voir ci dessous
+                print("-------------on entre en DFS-----------")
+                self.DFS(noeud, déja_vu, elements_connecté) # on utiilise le DFS voir ci dessous
                 tous_les_elements_connectés.append(elements_connecté) # on ajoute a notre grosse liste de tous les éléments connectés le paquets d'éléments cpnnectés que l'on vient de faire
         return tous_les_elements_connectés
 
-    def DFS(noeud, self, déja_vu, elements_connectés):
+    def DFS(self, noeud, déja_vu, elements_connectés):
+        # !!! SERT POUR LES GRAPHS QUI SONT PLUS PETITS OU EGALS A 100000 SOMMETS !!!
+        
         # ne renvoi rien car elle stock des informations en mémoire
         déja_vu.add(noeud) # on ajoute à déja vu le noeud traité
         elements_connectés.add(noeud) # on ajoute a nos éléments connectés le noeud traité
         for voisin in self.graph[noeud]: # pour chaque voisin:
-            if voisin not in déja_vu: # si le voisin n'a pas déja été traité:
-                self.DFS(voisin, self.graph, déja_vu, elements_connectés) # on utilise le DFS pour ecommencer jusqu'a ce qu'il n'y ai plus de voiins à traiter
+            if voisin[0] not in déja_vu: # si le voisin n'a pas déja été traité:
+                counter += 1
+                self.DFS(voisin[0], déja_vu, elements_connectés) # on utilise le DFS pour ecommencer jusqu'a ce qu'il n'y ai plus de voiins à traiter
 
     def connected_components2(self):  
         """
@@ -301,7 +311,7 @@ class Graph:
 
         # COMPLEXITE DE MIN_POWER : complexité en max(complexité de get_path_with_power, longueur de trajet * longuer de liste)
         
-        trajet=self.chemin_optimal_avec_distance(dep, dest, power=999999999999999999)
+        trajet=self.get_path_with_power(dep, dest, power=999999999999999999)
         puissance=0
         for k in range(0, len(trajet)-1): #trajet=[1,2,3,4]
 
@@ -408,11 +418,14 @@ class Graph:
 
         return()
     
-    def temps_necessaire_jul(self):
+    def temps_necessaire(self):
         #fonction de jul, temps necessaire pour calculer la puissnace minimale et le chemin associé, ie get_path_with_power
         temps = []
-        nb_chemin_possible=3  # à changer
-        for _ in range(6):
+        # !! NE MARCHE QUE POUR DES GRAPHS DONT SOMMETS < 100 000 !!
+        #nb_chemin_possible=self.Nombre_de_chemin()  # on devrait prendre la fonction Nombre de chemin mais comme elle ne calcule que pour le sgra^hs < 100000 sommets, on prend n**2 comme le nombre de chemins possibles
+        nb_chemin_possibles = self.nb_nodes**2
+        for i in range(6):
+            print("tour numero", i)
             a = random.randint(0,self.nb_nodes)
             b = random.randint(0,self.nb_nodes)
             t1 = time.perf_counter()
@@ -420,43 +433,21 @@ class Graph:
             t2 = time.perf_counter()
             temps.append(t2-t1)
         moyenne_temps=sum(temps)/len(temps)
-        temps_necessaire=moyenne_temps*nb_chemin_possible
+        temps_necessaire=moyenne_temps*nb_chemin_possibles
         return temps_necessaire
     
-    def temps_necessaire(self):
-        # On ne sait pas si on a bien compris la question. On va calculer pour 6 trajets différents entre deux points, le temps necessaire pour trouver la puissance minimale. On multiplie ensuite par le nombre de chemin total possible
-        dep = random.randint(0,self.nb_nodes)
-        dest = random.randint(0,self.nb_nodes) # on initialise de facon aléatoire un départ et une arrivée
-        temps = []
-        nb_chemin_possible=self.Nombre_de_chemin(dep, dest, visité=None)
-        for _ in range(6): # pour 6 puissance du camion différentes, donc 6 trajets différents
-            power=random.randint(0, 100000000000)
-            t1 = time.perf_counter()
-            c = self.min_power(dep,dest,power)
-            t2 = time.perf_counter()
-            temps.append(t2-t1)
-        moyenne_temps=sum(temps)/len(temps)
-        temps_necessaire=moyenne_temps*nb_chemin_possible
-        return temps_necessaire
 
-    def Nombre_de_chemin(self, dep, dest, visité=None):
-        print(dep)
-        print(dest)
-        # donne le nombre de chemins possibles entre deux points du graphe
-        if visité is None:
-            visité = set()
-        visité.add(dep)
-        if dep == dest:
-            return 1
-        nb_chem_possibles = 0
-        print(self.graph)
-        for voisin in self.graph[dep]:
-            print("vois",voisin)
-            print("voisin[0]", voisin[0])
-            if voisin[0] not in visité:
-                nb_chem_possibles += self.Nombre_de_chemin(voisin[0], dest, visité)
-        visité.remove(dep)
-        return nb_chem_possibles
+    def Nombre_de_chemin(self):
+        # on calcul combien de composentes connexes on a et on fait le nombre de sommets de ces composantes au carré. On fait la somme
+        compo_connex=self.connected_components()
+        compte_trajets=0
+        
+        for paquet in compo_connex:
+            nb_noeuds=len(paquet)
+            compte_trajets += (nb_noeuds)**2
+
+        return compte_trajets
+
 
 
 
@@ -506,81 +497,46 @@ def graph_from_file(filename):
         power=ligne_split[2]
         if len(ligne_split)==4:
             distance=ligne_split[3]
-            G.add_edge(int(noeud1), int(noeud2) ,  int(power), int(distance))
+            G.add_edge(int(noeud1), int(noeud2) ,  int(power), float(distance))
         else:
             G.add_edge(int(noeud1), int(noeud2) ,  int(power))
 
     return G
 
-def nb_nodes_routes(filename):
-    #donne le nombre de noeuds d'un graphe
+def routes_out(filename):
+    # rajoute a chaque ligne la puissance minimale necessaire pour effectuer le trajet donné
 
-    fichier = open(filename, "r")
-    first_line=fichier.readline()
-    nb_edge=int(first_line)
+    # On récupere le numero du fichier routes in associé
+    nom= filename.split(".")
+    fichier_out = open("routes." + f"{nom[1]}" + ".out", "w")
+    fichier_in=fichier = open(filename, "r")
+    first_line=fichier_in.readline()
 
-    nb_node = 0
+    g=graph_from_file( 'input/'+  'network.' + f"{nom[1]}" + ".in" )
 
-    for _ in range(nb_edge):
+    fichier_out.write(first_line)
+
+    for i in range(int(first_line)):
         line=fichier.readline()
         ligne_split=line.split(" ")
-        noeud1=int(ligne_split[0])
-        noeud2=int(ligne_split[1])
-        node = max(noeud1,noeud2)
-        if nb_node < node :
-            nb_node = node
-
-    return nb_node
-
-def graph_from_route(filename):
-
-    """
-    Reads a text file and returns the graph as an object of the Graph class.
-    The file should have the following format: 
-        The first line of the file is 'n m'
-        The next m lines have 'node1 node2 power_min dist' or 'node1 node2 power_min' (if dist is missing, it will be set to 1 by default)
-        The nodes (node1, node2) should be named 1..n
-        All values are integers.
-
-    Parameters: 
-    -----------
-    filename: str
-        The name of the file
-    Outputs: 
-    -----------
-    G: Graph
-        An object of the class Graph with the graph from file_name.
-    """
-
-    fichier = open(filename, "r")
-    first_line=fichier.readline()
-    nb_node = nb_nodes_routes(filename)
-    nb_edge=int(first_line)
+        dep=ligne_split[0]
+        dest=ligne_split[1]
+        power=g.min_power(dep, dest)
 
 
 
-    G = Graph(range(1, nb_node+1))
 
-    line=[]
 
-    for i in range( nb_edge):
-        print(i)
-        line=fichier.readline()
-        ligne_split=line.split(" ")
-        print(ligne_split)
-        noeud1=ligne_split[0]
-        noeud2=ligne_split[1]
-        power=ligne_split[2]
-        print("len=",len(ligne_split))
-        if len(ligne_split)==4:
-            distance=ligne_split[3]
-            G.add_edge(int(noeud1), int(noeud2) ,  int(power), int(distance))
-        else:
-            G.add_edge(int(noeud1), int(noeud2) ,  int(power))
-        noeud = max(noeud1,noeud2)
+
+
+
     
+    first_line=fichier.readline()
+    nb_node=int(first_line[:first_line.find(" ")])
+    nb_edge=int(first_line[first_line.find(" "):-1])
 
-    return G
+
+
 
 def element_en_commun(liste1, liste2):
     "compare deux listes et renvoi 1 si des elements sont communs aux deux listes, renvoi 0 sinon"
