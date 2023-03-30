@@ -40,7 +40,6 @@ class Graph:
         self.graph[node2].append( (node1, power_min, dist) )
         self.nb_edges += 1
  
- 
     def chemin_optimal_avec_distance(self, dep, dest, power):
         """
         Pour un graph donné, on prend en entréé le départ dep, la destination dest et la puissance du camion power.
@@ -156,9 +155,9 @@ class Graph:
                       
         return None # si le_chemin_optimal est vide, on retourne None
 
-
     def get_path_with_power(self, dep, dest, power):
         #BSF qui marche
+        #Retourne le chemin optimale selon la puissance du camion
 
         ancetre={}   # le dictionnaire des ancètres
         ou_est_on=[dep] # notre liste des positions
@@ -172,7 +171,7 @@ class Graph:
             
             for voisin in les_voisins: # pour chaque voisin
                 if voisin[0] not in recul and power > voisin[1] or power == voisin[1]: # si la puissance est o et qu'on ne recule pas:
-                    ou_est_on.append(voisin[0]) # on ajoute les positions suivante a notre liste de positions
+                    ou_est_on.append(voisin[0]) # on ajoute les positions suivantes a notre liste de positions
                     ancetre[voisin[0]]=position # on ajoute au dictionnaire des ancètres l'ancetre du voisin considéré
 
             ou_est_on.pop(0) # on retire la position traitée de la liste de positions
@@ -307,7 +306,8 @@ class Graph:
         """
         return set(map(frozenset, self.connected_components2()))
     
-    def min_power(self, dep, dest):
+    def min_power_non(self, dep, dest):
+        # Trouve le chemin optimal et calcul la puissance minimale necessaire pour passer sur ce chemin
 
         # COMPLEXITE DE MIN_POWER : complexité en max(complexité de get_path_with_power, longueur de trajet * longuer de liste)
         
@@ -325,6 +325,57 @@ class Graph:
             
             if pui>puissance:
                 puissance=pui
+            
+
+        return trajet, puissance 
+    
+    def bornes_power(self):
+
+        min=100000000000
+        max=0
+        for noeud in self.nodes:
+            for voisin in self.graph[noeud]:
+                if voisin[1]<min:
+                    min=voisin[1]
+                if voisin[1]>max:
+                    max=voisin[1]
+
+        return min, max
+
+    def min_power(self, dep, dest):
+        # Trouve le chemin parmis tous les chemins qui necessite le moins de puissance
+
+        pmin, pmax= self.bornes_power()
+        dicoto=(pmax-pmin)/2
+        dicotomin=pmin
+        print("pmin=", pmin)
+        dicotomax=pmax
+        print("pmax=", pmax)
+        print("dicoto=", dicoto)
+        #
+        i=0
+        
+        while dicotomin+1<dicotomax:
+        
+            trajet=self.get_path_with_power(dep, dest, power=dicoto)
+            print("trajet=", trajet)
+            if trajet==None:
+                dicotomin=dicoto
+                dicoto=dicotomin+(dicotomax-dicotomin)/2
+            else:
+                dicotomax=dicoto
+                dicoto=dicotomin+(dicotomax-dicotomin)/2  
+            print("dicotomin=", dicotomin)
+            print("dicotomax=", dicotomax)
+            print("dicoto=", dicoto)
+            i+=1
+
+        dicoto=int(dicotomax)
+
+        return dicoto             
+
+
+        
             
 
         return trajet, puissance 
@@ -448,9 +499,6 @@ class Graph:
 
         return compte_trajets
 
-
-
-
     def min_power_kruskal(self,dep,dest):
         g = self.kruskal() #kruskal fonction qui nous renvoie un arbre couvrant de poids minimal 
         return g.min_power(dep,dest)
@@ -504,36 +552,32 @@ def graph_from_file(filename):
     return G
 
 def routes_out(filename):
-    # rajoute a chaque ligne la puissance minimale necessaire pour effectuer le trajet donné
-
+    # Creer un nouveau fichier qui contient les puissances minimales des chemins optimaux associés à un fichier routes
     # On récupere le numero du fichier routes in associé
     nom= filename.split(".")
-    fichier_out = open("routes." + f"{nom[1]}" + ".out", "w")
-    fichier_in=fichier = open(filename, "r")
+    print("nom=", nom)
+    fichier_out = open("input/" + "routes." + f"{nom[1]}" + ".out", "w")
+    fichier_in = open("input/" + filename, "r")
     first_line=fichier_in.readline()
 
+    print('input/'+  'network.' + f"{nom[1]}" + ".in")
     g=graph_from_file( 'input/'+  'network.' + f"{nom[1]}" + ".in" )
+    print(g.min_power(6,11))
 
     fichier_out.write(first_line)
 
-    for i in range(int(first_line)):
-        line=fichier.readline()
+    for _ in range(int(first_line)):
+        line=fichier_in.readline()
         ligne_split=line.split(" ")
-        dep=ligne_split[0]
-        dest=ligne_split[1]
-        power=g.min_power(dep, dest)
+        dep=int(ligne_split[0])
+        dest=int(ligne_split[1])
+        traj, power=g.min_power(dep, dest)
+        print("traj=", traj)
+        print("power=", power)
+        fichier_out.write(str(dep) + " " + str(dest) + " " + str(power) + "\n")
 
 
 
-
-
-
-
-
-    
-    first_line=fichier.readline()
-    nb_node=int(first_line[:first_line.find(" ")])
-    nb_edge=int(first_line[first_line.find(" "):-1])
 
 
 
@@ -688,7 +732,7 @@ def kruskal(g):
 
 
 
-
+# 
 
 
 
