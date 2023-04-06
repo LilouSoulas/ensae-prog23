@@ -3,12 +3,14 @@ import copy
 
 
 data_path = "input/"
-file_name = "network.1.in"
+file_name = "network.00.in"
 
 
 g = graph_from_file(data_path + file_name)
 k=kruskal(g)
-k.montre_le_chemin("lilou", 1, 18, 100)
+#g.montre_le_chemin("petitcouleur", 8, 10, 20)
+g.montre_le_chemin_sans("avant kruskal", 4, 8, 11)
+
 
 
 """

@@ -407,6 +407,30 @@ class Graph:
 
         return()
     
+    def representation_sans(self, nom):
+
+        # Permet d'affciher le graph
+
+        graphe = gr(format='png', engine="circo")
+
+        key=self.graph.keys()
+        sauv=[]
+
+        for i in key: # on creer tous les sommets
+            print(i)
+            graphe.node(f"{i}",f"{i}")
+            for voisin in self.graph[i]:
+                if voisin[0] not in sauv:
+                    graphe.edge(f"{i}", f"{voisin[0]}")
+            
+            sauv.append(i)
+
+
+        graphe.render(f"{nom}.dot")
+        print(graphe)
+
+        return()
+    
     def montre_le_chemin(self, nom,  dep, dest, power):
 
         # Permet d'afficher le graph, et de mettre en évidence l'arrivée, le départ et le chemin optimal.
@@ -463,6 +487,71 @@ class Graph:
                 for voisin in self.graph[i]:
                     if voisin[0] not in sauv: # si le voisin n'as pas déja étét traité
                         graphe.edge(f"{i}", f"{voisin[0]}", label=f"p={voisin[1]},\n d={voisin[2]}")
+            
+            sauv.append(i)
+
+
+        graphe.render(f"{nom}.dot")
+        print(graphe)
+
+        return()
+    
+    def montre_le_chemin_sans(self, nom,  dep, dest, power):
+
+        # Permet d'afficher le graph, et de mettre en évidence l'arrivée, le départ et le chemin optimal.
+
+        graphe = gr(format='png', engine="circo") # on creer un graph
+        trajet=self.get_path_with_power(dep, dest, power)
+        key=self.graph.keys() # on récupere tous les sommets
+        sauv=[]
+        print("trajet=", trajet)
+
+        for i in key: # on creer tous les sommets
+            print(i)
+            if i==dep: # si le sommet considéré est le départ
+                print("le depart=", i)
+                graphe.node(f"{i}",f"{i} \n départ", color="red")   # si le sommet est le départ, on le met en rouge
+                for voisin in self.graph[i]:
+                    print("le voisin est=", voisin)
+                    print("trajet[1]=", trajet[1])
+                                              
+                    if voisin[0] not in sauv: # si le voisin n'as pas déja étét traité
+                        print("entrée dans la boucle")
+                        if voisin[0]==trajet[1]:
+                            graphe.edge(f"{i}", f"{voisin[0]}", color="red")
+                            print("on met en rouge")
+                        else: 
+                            graphe.edge(f"{i}", f"{voisin[0]}")
+
+            
+            elif i==dest: # si le sommet considéré est l'arrivée
+                graphe.node(f"{i}",f"{i} \n arrivée", color="red")  
+                for voisin in self.graph[i]:
+                    if voisin[0] not in sauv: # si le voisin n'as pas déja étét traité
+                        if voisin[0]==trajet[-2]:
+                            graphe.edge(f"{i}", f"{voisin[0]}", color="red")
+                        else: 
+                            graphe.edge(f"{i}", f"{voisin[0]}")
+
+
+            elif i in trajet: # si le voisin considéré est dans le trajet
+                print("position du voisin dans trajet=", i)
+                graphe.node(f"{i}",f"{i} ", color="orange")
+                rang=trajet.index(i)
+                for voisin in self.graph[i]:
+                    if voisin[0] not in sauv: # si le voisin n'as pas déja étét traité
+                        if voisin[0]==trajet[rang+1] or voisin[0]==trajet[rang-1]:
+                            graphe.edge(f"{i}", f"{voisin[0]}", color="red")
+                            print("on met en rouge")
+                        else: 
+                            graphe.edge(f"{i}", f"{voisin[0]}")
+
+
+            else: # sinon
+                graphe.node(f"{i}",f"{i}")
+                for voisin in self.graph[i]:
+                    if voisin[0] not in sauv: # si le voisin n'as pas déja étét traité
+                        graphe.edge(f"{i}", f"{voisin[0]}")
             
             sauv.append(i)
 
@@ -653,6 +742,8 @@ def indice_min(liste):
             min = liste[i]
             indice= i
     return indice
+
+#----------------------------------------ANCIEN KRUSKAL---------------------------------
 
 class UnionFind:
 
@@ -861,7 +952,6 @@ def routes_to_dico(filename_in, filename_out):
     Entrée: un fichier routes.in
     Return: un dico de liste comme ca: routes = [[dep, dest, powermin, profit], [powermin, profit]]
     '''
-
     dico_chemins={}
     nom= filename_in.split(".")
     fichier_in = open("input/" + f"{filename_in}", "r")
@@ -873,17 +963,16 @@ def routes_to_dico(filename_in, filename_out):
     for i in range(1,nb_trajet+1):
         line_in=fichier_in.readline()
         line_out=fichier_out.readline()
-
         ligne_in_split=line_in.split(" ")
         ligne_out_split=line_out.split(" ")
-
         profit=int(ligne_in_split[2])
         power_min=int(ligne_out_split[2])
         dep=int(ligne_in_split[0])
         dest=int(ligne_in_split[1])
         dico_chemins[f"{dep}"+"-"+f"{dest}"]=(power_min, profit)
+        print(i)
+        print(dico_chemins[f"{dep}"+"-"+f"{dest}"])
     return dico_chemins
-
 
 def selection_camion(filename_trucks, budget, filename_in, filename_out):
     # CODE GLOUTON
@@ -896,13 +985,13 @@ def selection_camion(filename_trucks, budget, filename_in, filename_out):
     '''
     #
 
-    # On change nos fichiers en listes et on rajoute (par le biais de la fonction) le rapport pri puissance dans la liste
+    # On change nos fichiers en dico 
     trucks=truck_to_dico(filename_trucks)
     print("trucks=", trucks)
     routes=routes_to_dico(filename_in, filename_out)
     print("routes=", routes)
 
-    # Pour chaque trajet, on creer une liste de tous 
+    # Pour chaque trajet, on creer une liste de tous les camions possibles 
     camion_selected=[]
     for trajet in routes.keys():
         for camion in trucks.keys():
@@ -915,13 +1004,14 @@ def selection_camion(filename_trucks, budget, filename_in, filename_out):
             profit=routes[trajet][1]
             print("profit=", profit)
             if power >= puissance_requise:
-                camion_selected.append([trajet, camion, prix/profit, prix])
+                camion_selected.append([trajet, camion, profit/prix, prix])
             print(camion_selected)
 
         
-    # On trie les camions par ordre décroissant de leur ratio prix-puissance
+    # On trie les camions par ordre décroissant de leur ratio profit-prix
     camion_trie = sorted(camion_selected, key=lambda camion_selected: camion_selected[2], reverse=True)
     print("camion_trie=", camion_trie)
+    print("len=", len(camion_trie))
     
     derniere_selection = []
     trajets_deja_faits=[]
@@ -929,11 +1019,14 @@ def selection_camion(filename_trucks, budget, filename_in, filename_out):
     
     for traj_cam in camion_trie:
         print("traj_cam=", traj_cam)
-        # On séléctionne les camions en commençant par le camion avec le ratio coût-puissance le plus élevé jusqu'à ce que le budget soit atteint
+        # On séléctionne les camions en commençant par le camion avec le ratio profit-prix le plus élevé jusqu'à ce que le budget soit atteint
         if traj_cam[3] <= budget and traj_cam[0] not in trajets_deja_faits:
             derniere_selection.append(traj_cam)
             trajets_deja_faits.append(traj_cam[0])
             budget -= traj_cam[3]
+
+    print(len(routes.keys()))
+
     
     return derniere_selection
 
