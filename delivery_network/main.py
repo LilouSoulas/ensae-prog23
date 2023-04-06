@@ -3,11 +3,12 @@ import copy
 
 
 data_path = "input/"
-file_name = "network.2.in"
+file_name = "network.1.in"
 
 
 g = graph_from_file(data_path + file_name)
-print(selection_camion("trucks.0.in", 25000000000, "routes.1.in", "routes.1.out"))
+k=kruskal(g)
+k.montre_le_chemin("lilou", 1, 18, 100)
 
 
 """
@@ -40,3 +41,8 @@ a=pas_de_doublons([1,2,4,5], [0,3,8,7])
 print(a)
 
 """
+
+
+
+
+

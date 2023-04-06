@@ -947,5 +947,3 @@ def selection_camion(filename_trucks, budget, filename_in, filename_out):
 
 
 
-
-
