@@ -840,34 +840,37 @@ def new_kruskal(g):
 ## - On construit p arrêtes pour notre nouveau graphe
 ## - La complexité finale est en O(p*n²)
 
-def truck_to_liste(truck): 
+def truck_to_dico(truck): 
     '''
     Prend en entrée un fichier de camions 
-    Retourne une liste de camions comme ca truck=[[puissance, prix, rapport prix puissance ]]
+    Retourne un dico de camions comme ca truck=[[puissance, prix, rapport prix puissance ]]
     '''
-    trucks=[]
+    dico_trucks={}
     fichier = open("input/" + f"{truck}", "r")
     nb_camion=int(fichier.readline())
-    for i in range(nb_camion):
+    for i in range(1,nb_camion+1):
         line=fichier.readline()
         ligne_split=line.split(" ")
         power=int(ligne_split[0])
         prix=int(ligne_split[1])
-        trucks.append([power, prix])
-    return trucks
+        dico_trucks[i]=(power, prix)
+    return dico_trucks
 
-def route_in_out_to_routes(filename_in, filename_out): 
+def routes_to_dico(filename_in, filename_out): 
     '''
     Entrée: un fichier routes.in
-    Return: une liste de liste comme ca: routes = [[dep, dest, powermin, profit], [powermin, profit]]
+    Return: un dico de liste comme ca: routes = [[dep, dest, powermin, profit], [powermin, profit]]
     '''
+
+    dico_chemins={}
     nom= filename_in.split(".")
     fichier_in = open("input/" + f"{filename_in}", "r")
     fichier_out = open("input/" + f"{filename_out}", "r") 
     nb_trajet=int(fichier_in.readline())
+    print(nb_trajet)
     nb_trajet_out=int(fichier_out.readline())
     routes=[]
-    for i in range(nb_trajet):
+    for i in range(1,nb_trajet+1):
         line_in=fichier_in.readline()
         line_out=fichier_out.readline()
 
@@ -878,10 +881,12 @@ def route_in_out_to_routes(filename_in, filename_out):
         power_min=int(ligne_out_split[2])
         dep=int(ligne_in_split[0])
         dest=int(ligne_in_split[1])
-        routes.append([dep, dest, power_min, profit])
-    return routes
+        dico_chemins[f"{dep}"+"-"+f"{dest}"]=(power_min, profit)
+    return dico_chemins
+
 
 def selection_camion(filename_trucks, budget, filename_in, filename_out):
+    # CODE GLOUTON
     '''
     prend en entrée le fichier trucks de tous les camions disponibles, 
     le budget budget de la compagnie de transport 
@@ -892,35 +897,45 @@ def selection_camion(filename_trucks, budget, filename_in, filename_out):
     #
 
     # On change nos fichiers en listes et on rajoute (par le biais de la fonction) le rapport pri puissance dans la liste
-    trucks=truck_to_liste(filename_trucks)
-    routes=route_in_out_to_routes(filename_in, filename_out)
-    
+    trucks=truck_to_dico(filename_trucks)
+    print("trucks=", trucks)
+    routes=routes_to_dico(filename_in, filename_out)
+    print("routes=", routes)
+
+    # Pour chaque trajet, on creer une liste de tous 
+    camion_selected=[]
+    for trajet in routes.keys():
+        for camion in trucks.keys():
+            power=trucks[camion][0]
+            print("power=", power)
+            prix=trucks[camion][1]
+            print("prix=", prix)
+            puissance_requise=routes[trajet][0]
+            print("puissance_requise=", puissance_requise)
+            profit=routes[trajet][1]
+            print("profit=", profit)
+            if power >= puissance_requise:
+                camion_selected.append([trajet, camion, prix/profit, prix])
+            print(camion_selected)
+
+        
     # On trie les camions par ordre décroissant de leur ratio prix-puissance
-    sorted_trucks = sorted(trucks, key=lambda truck: truck[2], reverse=True)
+    camion_trie = sorted(camion_selected, key=lambda camion_selected: camion_selected[2], reverse=True)
+    print("camion_trie=", camion_trie)
     
-    selected_trucks = []
+    derniere_selection = []
+    trajets_deja_faits=[]
     total_profit = 0
     
-    for truck in sorted_trucks:
+    for traj_cam in camion_trie:
+        print("traj_cam=", traj_cam)
         # On séléctionne les camions en commençant par le camion avec le ratio coût-puissance le plus élevé jusqu'à ce que le budget soit atteint
-        if truck[1] <= budget:
-            selected_trucks.append(truck)
-            budget -= truck[1]
+        if traj_cam[3] <= budget and traj_cam[0] not in trajets_deja_faits:
+            derniere_selection.append(traj_cam)
+            trajets_deja_faits.append(traj_cam[0])
+            budget -= traj_cam[3]
     
-    # Pour chaque camion sélectionné, on trouve le trajet qui rapporte le plus de profit et qui est compatible avec la puissance du camion
-    for truck in selected_trucks:
-        best_route = None
-        max_profit = 0
-        
-        for route in routes: #[30, 1000] = [dep, dest, puissance requise, profit]
-            if truck[0] >= route[2] and route[3] > max_profit: #truck=[[puissance, prix, rapport prix puissance ]]
-                best_route = route
-                max_profit = route[3]
-        
-        # On ajoute le profit du trajet au profit total
-        total_profit += max_profit
-    
-    return selected_trucks, total_profit
+    return derniere_selection
 
 
 

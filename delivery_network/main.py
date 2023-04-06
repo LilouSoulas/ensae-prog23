@@ -1,4 +1,4 @@
-from graph import Graph, graph_from_file, element_en_commun, pas_de_doublons, indice_min, kruskal, routes_out, selection_camion, route_in_out_to_routes, truck_to_liste, new_kruskal
+from graph import Graph, graph_from_file, element_en_commun, pas_de_doublons, indice_min, kruskal, routes_out, selection_camion, routes_to_dico, truck_to_dico, new_kruskal
 import copy
 
 
@@ -7,7 +7,7 @@ file_name = "network.2.in"
 
 
 g = graph_from_file(data_path + file_name)
-routes_out("routes.3.in")
+print(selection_camion("trucks.0.in", 25000000000, "routes.1.in", "routes.1.out"))
 
 
 """
