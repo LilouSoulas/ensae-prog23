@@ -156,6 +156,8 @@ class Graph:
         return None # si le_chemin_optimal est vide, on retourne None
 
     def get_path_with_power(self, dep, dest, power):
+        print("get_path_with_power")
+
         #BSF qui marche
         #Retourne le chemin optimale selon la puissance du camion
 
@@ -166,11 +168,10 @@ class Graph:
         recul=[] # notre liste des endroits ou l'on est déja allé pour éviter de faire demi tour
 
         while position!=dest: # tant que notre position actuelle n'est pas égale à la destination on fait:
-            print("quête du chein optimal::::", k)
             les_voisins=self.graph[position] # on récupere tous les voisins de notre position considérée
             
             for voisin in les_voisins: # pour chaque voisin
-                if voisin[0] not in recul and power > voisin[1] or power == voisin[1]: # si la puissance est o et qu'on ne recule pas:
+                if voisin[0] not in recul and power >= voisin[1] : # si la puissance est o et qu'on ne recule pas:
                     ou_est_on.append(voisin[0]) # on ajoute les positions suivantes a notre liste de positions
                     ancetre[voisin[0]]=position # on ajoute au dictionnaire des ancètres l'ancetre du voisin considéré
 
@@ -185,14 +186,20 @@ class Graph:
             k=k+1
 
         # on retrace le chemin inverse
+        
         chemin_opti=[dest]
         pose=dest
+
+        
         while pose != dep:
+
             chemin_opti.append(ancetre[pose])
             pose=ancetre[pose]
 
         # on retourne la liste
         chemin_opti.reverse()
+
+        
 
         return chemin_opti
 
@@ -343,31 +350,27 @@ class Graph:
         return min, max
 
     def min_power(self, dep, dest):
+        print("min_power")
         # Trouve le chemin parmis tous les chemins qui necessite le moins de puissance
 
         pmin, pmax= self.bornes_power()
         dicoto=(pmax-pmin)/2
         dicotomin=pmin
-        print("pmin=", pmin)
         dicotomax=pmax
-        print("pmax=", pmax)
-        print("dicoto=", dicoto)
-        #
+        
         i=0
         
         while dicotomin+1<dicotomax:
         
+            print("dans min power, juste avant de faire geth_path: dep=", dep, "dest=", dest, "dicoto=", dicoto)
             trajet=self.get_path_with_power(dep, dest, power=dicoto)
-            print("trajet=", trajet)
+            print("dans min power: trajet=", trajet)
             if trajet==None:
                 dicotomin=dicoto
                 dicoto=dicotomin+(dicotomax-dicotomin)/2
             else:
                 dicotomax=dicoto
                 dicoto=dicotomin+(dicotomax-dicotomin)/2  
-            print("dicotomin=", dicotomin)
-            print("dicotomax=", dicotomax)
-            print("dicoto=", dicoto)
             i+=1
 
         dicoto=int(dicotomax)
@@ -486,7 +489,6 @@ class Graph:
         moyenne_temps=sum(temps)/len(temps)
         temps_necessaire=moyenne_temps*nb_chemin_possibles
         return temps_necessaire
-    
 
     def Nombre_de_chemin(self):
         # on calcul combien de composentes connexes on a et on fait le nombre de sommets de ces composantes au carré. On fait la somme
@@ -503,8 +505,52 @@ class Graph:
         g = self.kruskal() #kruskal fonction qui nous renvoie un arbre couvrant de poids minimal 
         return g.min_power(dep,dest)
     
+    def dfs(self, node, previous= {}, father = 0, c = 0, p = 0):
+        """
+        Return the dictionnary of the previous nodes, starting with the node initial node in argument
+        As we consider the graph to be related it works
+        """
+        previous[node] = (father, c, p)
+        for son, power, distance in self.graph[node]:
+            if son != father:
+                self.dfs( son, previous, father = node, c = c+1, p = power)
+        return previous
 
+    def get_path(self, previous, dep, dest):
+    # prend une source et une destintion et renvoi le chemin otpimal
+    # Les graphes sont connexes, donc osef de vérifier qu'ils appartienent à la même composante
+        power = {0}
+        condition = previous[dest][1] < previous[dep][1]
+        if condition:     # on veut toujours partir du point le plus loin du noeud mère.
+            dep, dest = dest, dep
 
+        path1, node1 = [dest], dest
+        path2, node2 = [dep], dep
+
+        while previous[node1][1] > previous[node2][1]:
+            node1, new_power = previous[node1][0], previous[node1][2]
+            path1.insert(0,node1)
+            power.add(new_power)
+        while node1 != node2:
+            node1, new_power = previous[node1][0], previous[node1][2]
+            path1.insert(0,node1)
+            power.add(new_power)
+
+            node2, new_power = previous[node2][0], previous[node2][2]
+            power.add(new_power)
+            if node2 != node1:
+                path2 += [node2]
+
+        path = path2 + path1
+        min_power = max(power)
+        if condition :
+            path.reverse()
+
+        return path, min_power
+
+    def new_min_power(self, previous, source, dest):
+        return self.get_path(previous, source, dest)[1]
+    
 
 
 def graph_from_file(filename):
@@ -561,9 +607,7 @@ def routes_out(filename):
     first_line=fichier_in.readline()
 
     print('input/'+  'network.' + f"{nom[1]}" + ".in")
-    g=graph_from_file( 'input/'+  'network.' + f"{nom[1]}" + ".in" )
-    print(g.min_power(6,11))
-
+    g, previous=new_kruskal(graph_from_file( 'input/'+  'network.' + f"{nom[1]}" + ".in" ))
     fichier_out.write(first_line)
 
     for _ in range(int(first_line)):
@@ -571,16 +615,11 @@ def routes_out(filename):
         ligne_split=line.split(" ")
         dep=int(ligne_split[0])
         dest=int(ligne_split[1])
-        traj, power=g.min_power(dep, dest)
-        print("traj=", traj)
+        print("dest", dest, "dep", dep)
+        print(type(g))
+        power=g.new_min_power(previous, dep, dest)
         print("power=", power)
         fichier_out.write(str(dep) + " " + str(dest) + " " + str(power) + "\n")
-
-
-
-
-
-
 
 def element_en_commun(liste1, liste2):
     "compare deux listes et renvoi 1 si des elements sont communs aux deux listes, renvoi 0 sinon"
@@ -615,7 +654,6 @@ def indice_min(liste):
             indice= i
     return indice
 
-
 class UnionFind:
 
     def __init__(self, n):  #n nombre de sommets du graphe a etudier
@@ -641,7 +679,6 @@ class UnionFind:
             else:
                 self.parent[representant_y-1] = representant_x
                 self.rang[representant_x-1] += 1
-
 
 def unionfinds(chemin,classe):
     return [classe.finds(i) for i in chemin]  #nous renvoie la liste des parents 
@@ -669,7 +706,6 @@ def kruskal(g):
     
 
         for voisin in g.graph[i]:
-            print(voisin[0])
             if voisin[0] not in sauv:
                 int=[]
                 int.append(i)
@@ -723,6 +759,80 @@ def kruskal(g):
 
     return G
 
+#------------------------------------------NEW KRUSKAL--------------------------------------
+
+def initial_node(initial,node):
+    """
+    Fonction de initial un dictionnaire, et de node un noeud donc un entier.
+    Trouve le noeud initial d'un noeud (c'est à dire le noeud à partir duquel a été créé la composante connexe)
+    Il permettra d'indicer cette composante.
+    """
+    if initial[node] != node:
+        initial[node] = initial_node(initial,initial[node])
+    return initial[node]
+    
+def union(initial,rank,node1,node2):
+    """
+    Unit node 1 à node 2 en faisant devenir leur noeud initial clef/valeur l'un de l'autre dans initial.
+    En d'autres termes, dans kruskal lorsqu'on tombe sur une arrête qui relie deux arbres,
+    union les relie et actualise leurs rangs et noeud initiaux.
+    On actualise le rang pour avoir le même noeud initial quelque soit le noeud de l'arbre 
+    (on lie les arbres en prenant tjrs le même noeud initial ; celui de rang le plus élevé)
+    Actualise également le rang.
+    """
+    i1 = initial_node(initial,node1)
+    i2 = initial_node(initial,node2)
+    if i1 == i2: 
+        return None
+    if rank[i2] < rank[i1]:
+        initial[i2] = i1
+    else:
+        initial[i1]=i2
+        if rank[i1] == rank[i2]:
+            rank[i2] += 1
+    return None
+
+def new_kruskal(g):
+    """ 
+    On remarque qu'avec ce fonctionnement, on s'autorise à avoir des graphes non connexes.
+    Néanmoins, on ne prendra pas en compte les points isolés. Nous n'essaierons pas de les 
+    inclure dans notre nouveau graphe car on s'intéresse aux trajets ; nous n'en avons que
+    faire des points isolés !
+    """
+    g_mst = Graph(nodes = g.nodes)
+    edges = []
+    initial = {}  # Noeud précédent. Permettra de remonter au noeud initial de chaque composante connexe avec initial_node
+                        # Le noeud initial permet d'indicer la composante connexe.
+    rank = {}           # Le rang nous permettra de lier des gros arbres avec des petits
+        
+    # Chaque noeud a comme noeud initial lui même, et comme rang 0
+    t0 = time.perf_counter()
+    for node in g.nodes:
+        if g.graph[node] != []:
+            initial[node] = node
+            rank[node] = 0
+    for node in g.graph:
+        for edge in g.graph[node]:
+            edges.append((node,edge[0],edge[1])) # edges devient la liste des arrêtes notées (node1, node2, power)
+    t1 = time.perf_counter()
+    print("parcourt du graphe : ", t1-t0)
+    edges.sort(key = lambda x : x[2]) # Permet de trier la liste par rapport à la troisième valeur des sous liste de la liste edge
+    t2 = time.perf_counter()
+    for edge in edges:
+        if initial_node(initial,edge[0]) != initial_node(initial,edge[1]):
+        # Si les bouts d'une arrête nne sont pas déjà dans la même composante connexe, alors on les unit.
+            g_mst.add_edge(edge[0],edge[1],edge[2])
+            union(initial,rank,edge[0],edge[1])
+    t3 = time.perf_counter()
+    print("parcourt des arrêtes : ", t3-t2)
+    t4 = time.perf_counter()
+    previous = g_mst.dfs(1) 
+    # on se dit que le noeud générateur du graph a plus de chances d'être au milieu du graphe car il appartient à l'arbre 
+    # auquel on a fixé d'autres arbres.
+    t5 = time.perf_counter()
+    print("get_previous prend : ", t5 - t4)
+  
+    return g_mst, previous
 
 ## COMPLEXITE : notons n le nombre de sommets
 ## - la boucle for nous permettant de calculer tous les somments a une complexité en O(n²)
@@ -730,9 +840,87 @@ def kruskal(g):
 ## - On construit p arrêtes pour notre nouveau graphe
 ## - La complexité finale est en O(p*n²)
 
+def truck_to_liste(truck): 
+    '''
+    Prend en entrée un fichier de camions 
+    Retourne une liste de camions comme ca truck=[[puissance, prix, rapport prix puissance ]]
+    '''
+    trucks=[]
+    fichier = open("input/" + f"{truck}", "r")
+    nb_camion=int(fichier.readline())
+    for i in range(nb_camion):
+        line=fichier.readline()
+        ligne_split=line.split(" ")
+        power=int(ligne_split[0])
+        prix=int(ligne_split[1])
+        trucks.append([power, prix])
+    return trucks
 
+def route_in_out_to_routes(filename_in, filename_out): 
+    '''
+    Entrée: un fichier routes.in
+    Return: une liste de liste comme ca: routes = [[dep, dest, powermin, profit], [powermin, profit]]
+    '''
+    nom= filename_in.split(".")
+    fichier_in = open("input/" + f"{filename_in}", "r")
+    fichier_out = open("input/" + f"{filename_out}", "r") 
+    nb_trajet=int(fichier_in.readline())
+    nb_trajet_out=int(fichier_out.readline())
+    routes=[]
+    for i in range(nb_trajet):
+        line_in=fichier_in.readline()
+        line_out=fichier_out.readline()
 
-# 
+        ligne_in_split=line_in.split(" ")
+        ligne_out_split=line_out.split(" ")
+
+        profit=int(ligne_in_split[2])
+        power_min=int(ligne_out_split[2])
+        dep=int(ligne_in_split[0])
+        dest=int(ligne_in_split[1])
+        routes.append([dep, dest, power_min, profit])
+    return routes
+
+def selection_camion(filename_trucks, budget, filename_in, filename_out):
+    '''
+    prend en entrée le fichier trucks de tous les camions disponibles, 
+    le budget budget de la compagnie de transport 
+    et le fichier routes de tous les trajets disponibles avec leur puissance requise (routeout) et leur profit (routin). 
+    
+    renvoie la liste des camions sélectionnés avec leur affectation à un trajet ainsi que le profit total obtenu.
+    '''
+    #
+
+    # On change nos fichiers en listes et on rajoute (par le biais de la fonction) le rapport pri puissance dans la liste
+    trucks=truck_to_liste(filename_trucks)
+    routes=route_in_out_to_routes(filename_in, filename_out)
+    
+    # On trie les camions par ordre décroissant de leur ratio prix-puissance
+    sorted_trucks = sorted(trucks, key=lambda truck: truck[2], reverse=True)
+    
+    selected_trucks = []
+    total_profit = 0
+    
+    for truck in sorted_trucks:
+        # On séléctionne les camions en commençant par le camion avec le ratio coût-puissance le plus élevé jusqu'à ce que le budget soit atteint
+        if truck[1] <= budget:
+            selected_trucks.append(truck)
+            budget -= truck[1]
+    
+    # Pour chaque camion sélectionné, on trouve le trajet qui rapporte le plus de profit et qui est compatible avec la puissance du camion
+    for truck in selected_trucks:
+        best_route = None
+        max_profit = 0
+        
+        for route in routes: #[30, 1000] = [dep, dest, puissance requise, profit]
+            if truck[0] >= route[2] and route[3] > max_profit: #truck=[[puissance, prix, rapport prix puissance ]]
+                best_route = route
+                max_profit = route[3]
+        
+        # On ajoute le profit du trajet au profit total
+        total_profit += max_profit
+    
+    return selected_trucks, total_profit
 
 
 
